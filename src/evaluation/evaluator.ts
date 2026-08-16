@@ -174,11 +174,11 @@ export function isFlagEnabled(flag: FeatureFlag, context: MozhnoContext, targeti
   if (rollOut != null) {
     if (rollOut >= 100) return true;
     if (rollOut <= 0) return false;
-    const key = targetingKey || context.userId || context.sessionId || '';
+    const key = targetingKey || context.userId || context.sessionId || context.anonymousId || '';
     const seed = flag.key + key;
     const hash = murmurHash32(seed);
     const bucket = Math.abs(hash) % 100;
-    return bucket < rollOut;
+    return bucket < Math.trunc(rollOut);
   }
 
   return true;

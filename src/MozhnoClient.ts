@@ -107,15 +107,24 @@ export class MozhnoClient extends EventEmitter {
   }
 
   private getTargetingKey(context: MozhnoContext): string {
-    const key = context.userId || context.sessionId || (this.useAnonId ? this.anonId : '');
+    const key = context.userId || context.sessionId || (this.useAnonId ? this.anonId : '') || context.anonymousId;
     if (!key && !this.warnedNoId) {
       this.warnedNoId = true;
       console.warn(
-        'Mozhno: no userId or sessionId in context — rollout will bucket all anonymous traffic into the same group. ' +
-        'Set stickyAnonId=true (default) or pass a userId/sessionId to fix.',
+        'Mozhno: no userId or sessionId in context and stickyAnonId is disabled — ' +
+        'rollout will bucket all anonymous traffic into the same group. ' +
+        'Set stickyAnonId=true or pass a userId/sessionId.',
       );
     }
     return key;
+  }
+
+  private getEvaluateContext(): MozhnoContext {
+    const context = this.context;
+    if (this.useAnonId && !context.userId && !context.sessionId) {
+      return { ...context, anonymousId: this.anonId };
+    }
+    return context;
   }
 
   private enrichContext(context?: MozhnoContext): MozhnoContext {
@@ -194,7 +203,7 @@ export class MozhnoClient extends EventEmitter {
     try {
       await this.withRetry(async () => {
         if (this.config.mode === 'client') {
-          const toggles = await this.fetcher.evaluate(this.context);
+          const toggles = await this.fetcher.evaluate(this.getEvaluateContext());
           for (const t of toggles) {
             this.clientToggles.set(t.name, t.enabled);
           }
@@ -221,7 +230,7 @@ export class MozhnoClient extends EventEmitter {
     try {
       await this.withRetry(async () => {
         if (this.config.mode === 'client') {
-          const toggles = await this.fetcher.evaluate(this.context);
+          const toggles = await this.fetcher.evaluate(this.getEvaluateContext());
           this.clientToggles.clear();
           for (const t of toggles) {
             this.clientToggles.set(t.name, t.enabled);

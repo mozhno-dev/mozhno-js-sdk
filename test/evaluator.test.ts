@@ -269,6 +269,38 @@ describe('Evaluator', () => {
     expect(isFlagEnabled(flag, { sessionId: 's1' })).toBe(true);
   });
 
+  it('rollout uses anonymousId when userId and sessionId missing', () => {
+    const flag = createFlag({ rollOut: 50 });
+    const anonCtx: MozhnoContext = { anonymousId: 'anon-1' };
+    const userIdCtx: MozhnoContext = { userId: 'anon-1' };
+    expect(isFlagEnabled(flag, anonCtx)).toBe(isFlagEnabled(flag, userIdCtx));
+    expect(isFlagEnabled(flag, anonCtx)).toBe(isFlagEnabled(flag, anonCtx));
+  });
+
+  it('rollout deterministic for same anonymousId', () => {
+    const flag = createFlag({ rollOut: 50 });
+    const first = isFlagEnabled(flag, { anonymousId: 'anon-1' });
+    const second = isFlagEnabled(flag, { anonymousId: 'anon-1' });
+    expect(first).toBe(second);
+  });
+
+  it('rollout bucket matches server reference vector', () => {
+    // seed "test-flag" + "anon-1" = "test-flaganon-1" → bucket 65 (must match server & Java SDK)
+    const flag65 = createFlag({ key: 'test-flag', rollOut: 65 });
+    const flag66 = createFlag({ key: 'test-flag', rollOut: 66 });
+    const ctx: MozhnoContext = { userId: 'anon-1' };
+    expect(isFlagEnabled(flag65, ctx)).toBe(false);
+    expect(isFlagEnabled(flag66, ctx)).toBe(true);
+  });
+
+  it('rollout truncates fractional percentage to match server (intValue)', () => {
+    // userId '135' with flag key 'test' → bucket 50; server/Java: 50 < intValue(50.5) = 50 → false
+    const flag = createFlag({ rollOut: 50.5 });
+    expect(isFlagEnabled(flag, { userId: '135' })).toBe(false);
+    const flag51 = createFlag({ rollOut: 51 });
+    expect(isFlagEnabled(flag51, { userId: '135' })).toBe(true);
+  });
+
   it('rollout uses empty string when nothing is provided', () => {
     const flag = createFlag({ rollOut: 100 });
     expect(isFlagEnabled(flag, {})).toBe(true);
