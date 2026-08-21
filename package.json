@@ -1,11 +1,14 @@
 {
   "name": "@mozhno/client-js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Feature flag evaluation for browser and Node.js — local, no-network-per-check, fail-closed.",
   "type": "module",
   "main": "./dist/mozhno-client.cjs",
   "module": "./dist/mozhno-client.mjs",
   "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/mozhno-dev/mozhno-js-sdk"
