@@ -88,7 +88,7 @@ jobs:
 
       - name: Pack and smoke-test ESM/CJS imports
         run: |
-          TARBALL_PATH="$GITHUB_WORKSPACE/$(npm pack --silent)"
+          TARBALL_PATH="$GITHUB_WORKSPACE/$(npm pack --silent | tail -1)"
           mkdir -p /tmp/consumer
           cd /tmp/consumer
           npm init -y > /dev/null
