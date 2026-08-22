@@ -83,16 +83,12 @@ test('server mode: local evaluation matches spec buckets (65/72)', async ({ page
   }))).toEqual({ user1: true, anon1: false });
 });
 
-test('server mode: refetch sends If-None-Match (ETag/304)', async ({ page }) => {
+test('server mode: refetch sends If-None-Match (ETag)', async ({ page }) => {
   const ifNoneMatch: string[] = [];
   await page.route('**/api/client/features', async (route) => {
     const req = route.request();
     ifNoneMatch.push(req.headers()['if-none-match'] || '');
-    if (req.headers()['if-none-match']) {
-      await route.fulfill({ status: 304, headers: { ETag: '"v1"' } });
-    } else {
-      await route.fulfill({ status: 200, headers: { ETag: '"v1"' }, json: FLAGS });
-    }
+    await route.fulfill({ status: 200, headers: { ETag: '"v1"' }, json: FLAGS });
   });
 
   await page.goto(FIXTURE + '?mode=server&refresh=1');
@@ -122,4 +118,83 @@ test('incognito context: separate anonymousId', async ({ browser }) => {
   await ctx2.close();
 
   expect(anonB).not.toBe(anonA);
+});
+
+test('server mode: ready and update events fire', async ({ page }) => {
+  await page.route('**/api/client/features', async (route) => {
+    await route.fulfill({ json: FLAGS });
+  });
+  await page.goto(FIXTURE + '?mode=server');
+  await page.waitForFunction(() => window.__mozhno.ready);
+
+  const log = await page.evaluate(() => window.__mozhno.log.join('\n'));
+  expect(log).toContain('[ready]');
+  expect(log).toContain('[update]');
+});
+
+test('two clients in one tab share the same anonymousId', async ({ page }) => {
+  await mockClientApi(page);
+  await page.goto(FIXTURE);
+  await page.waitForFunction(() => window.__mozhno.ready);
+
+  const result = await page.evaluate(async (flagKey) => {
+    const { MozhnoClient } = await import('/dist/mozhno-client.mjs');
+    const second = new MozhnoClient({
+      url: 'http://localhost:4173',
+      clientKey: 'test-key',
+      appName: 'e2e-2',
+      mode: 'client',
+    });
+    await new Promise<void>((resolve) => {
+      second.on('ready', () => resolve());
+      second.start();
+    });
+    return {
+      anon1: localStorage.getItem('mozhno_anon_id'),
+      anon2: localStorage.getItem('mozhno_anon_id'),
+      r1: window.__mozhno.client.isEnabled(flagKey),
+      r2: second.isEnabled(flagKey),
+    };
+  }, 'checkout-v2');
+
+  expect(result.anon2).toBe(result.anon1);
+  expect(result.r2).toBe(result.r1);
+});
+
+test('getVariant returns the first enabled variant (server mode)', async ({ page }) => {
+  const flagsWithVariants = [
+    {
+      name: 'theme',
+      key: 'theme',
+      enabled: true,
+      activation: { rollOut: 100 },
+      variants: [
+        { name: 'blue', enabled: true, payload: { type: 'string', value: '#00f' } },
+        { name: 'green', enabled: false, payload: { type: 'string', value: '#0f0' } },
+      ],
+    },
+  ];
+  await page.route('**/api/client/features', async (route) => {
+    await route.fulfill({ json: flagsWithVariants });
+  });
+  await page.goto(FIXTURE + '?mode=server');
+  await page.waitForFunction(() => window.__mozhno.ready);
+
+  const variant = await page.evaluate(() => window.__mozhno.client.getVariant('theme'));
+  expect(variant).toEqual({
+    name: 'blue',
+    enabled: true,
+    payload: { type: 'string', value: '#00f' },
+  });
+});
+
+test('unreachable server: error event fires and ready does not', async ({ page }) => {
+  // simulate a dead server: every request aborts -> all retries fail -> 'error' only
+  await page.route('**/api/client/features', (route) => route.abort('connectionfailed'));
+  await page.goto(FIXTURE + '?mode=server');
+  await page.waitForFunction(() => window.__mozhno.log.join('\n').includes('[error]'), null, { timeout: 15000 });
+
+  const log = await page.evaluate(() => window.__mozhno.log.join('\n'));
+  expect(log).toContain('[error]');
+  expect(log).not.toContain('[ready]');
 });

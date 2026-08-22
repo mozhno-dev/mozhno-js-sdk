@@ -18,10 +18,17 @@
       out.textContent = window.__mozhno.log.join('\n');
     };
 
+    // optional: seed a known anonymousId (for deterministic live-server tests)
+    const seededAnonId = params.get('anonId');
+    if (seededAnonId) {
+      try { localStorage.setItem('mozhno_anon_id', seededAnonId); } catch { /* private mode */ }
+    }
+
     window.__mozhno.ready = new Promise((resolve) => {
       const client = new MozhnoClient({
-        url: 'http://localhost:4173',
-        clientKey: 'test-key',
+        url: params.get('url') || 'http://localhost:4173',
+        apiKey: params.get('key') || '',
+        clientKey: params.get('key') || 'test-key',
         appName: 'e2e',
         mode: params.get('mode') || 'client',
         stickyAnonId: params.get('sticky') !== 'false',
@@ -29,6 +36,7 @@
       });
       window.__mozhno.client = client;
       client.on('ready', () => { log('[ready]'); resolve(); });
+      client.on('update', () => log('[update]'));
       client.on('warn', (w) => log('[warn] ' + w));
       client.on('error', (e) => log('[error] ' + e.message));
       client.start();
