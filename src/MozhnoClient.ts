@@ -86,6 +86,8 @@ export class MozhnoClient extends EventEmitter {
 
     if (this.fetchTimer) { clearInterval(this.fetchTimer); this.fetchTimer = null; }
     if (this.metricsTimer) { clearInterval(this.metricsTimer); this.metricsTimer = null; }
+    // flush pending metrics (parity with the Java SDK stop())
+    void this.sendMetrics();
   }
 
   isEnabled(flagKey: string, context?: MozhnoContext): boolean {
@@ -107,7 +109,8 @@ export class MozhnoClient extends EventEmitter {
   }
 
   private getTargetingKey(context: MozhnoContext): string {
-    const key = context.userId || context.sessionId || (this.useAnonId ? this.anonId : '') || context.anonymousId;
+    const key = context.userId || context.sessionId || context.anonymousId
+      || (this.useAnonId ? this.anonId : '');
     if (!key && !this.warnedNoId) {
       this.warnedNoId = true;
       console.warn(
@@ -121,7 +124,7 @@ export class MozhnoClient extends EventEmitter {
 
   private getEvaluateContext(): MozhnoContext {
     const context = this.context;
-    if (this.useAnonId && !context.userId && !context.sessionId) {
+    if (this.useAnonId && !context.userId && !context.sessionId && !context.anonymousId) {
       return { ...context, anonymousId: this.anonId };
     }
     return context;

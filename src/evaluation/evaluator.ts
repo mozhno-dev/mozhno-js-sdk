@@ -56,7 +56,8 @@ function compareSemver(a: string, b: string): number {
   return 0;
 }
 
-const isoRe = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+// strict RFC3339/ISO-8601 (Instant.parse-compatible): requires seconds and Z/offset
+const isoRe = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/;
 
 function compareValues(contextType: string | undefined, a: string, b: string): number {
   if (contextType === 'number') {
@@ -91,14 +92,16 @@ function evaluateConstraintOp(operator: string, contextType: string | undefined,
       if (contextType === 'number') {
         const na = Number(contextValue);
         const nb = Number(checkValue);
-        return !isNaN(na) && !isNaN(nb) ? na === nb : contextValue === checkValue;
+        if (isNaN(na) || isNaN(nb)) return false;
+        return na === nb;
       }
       return contextValue === checkValue;
     case 'ne':
       if (contextType === 'number') {
         const na = Number(contextValue);
         const nb = Number(checkValue);
-        return !isNaN(na) && !isNaN(nb) ? na !== nb : contextValue !== checkValue;
+        if (isNaN(na) || isNaN(nb)) return false;
+        return na !== nb;
       }
       return contextValue !== checkValue;
     case 'gt':
@@ -126,6 +129,9 @@ function evaluateConstraints(constraints: Constraint[], context: MozhnoContext):
     const operator = c.operator || 'in';
     const values = c.values || [];
     const contextType = c.contextType;
+
+    // a constraint without values is meaningless — skip it (parity with Java)
+    if (values.length === 0) continue;
 
     if (operator === 'in') {
       if (!values.includes(fieldValue)) return false;

@@ -31,6 +31,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:live:setup": "node test/e2e-live/setup.mjs",
+    "test:e2e:live": "node test/e2e-live/setup.mjs && playwright test --config playwright.live.config.ts",
     "lint": "eslint . --ext ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\""

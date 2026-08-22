@@ -1,7 +1,8 @@
 import type { MozhnoConfig, FeatureFlag, ToggleResult, MozhnoContext } from './types';
 
 const SDK_TYPE = 'js';
-const SDK_VERSION = '1.0.0';
+declare const __SDK_VERSION__: string;
+const SDK_VERSION = typeof __SDK_VERSION__ === 'string' ? __SDK_VERSION__ : 'unknown';
 
 export class HttpFetcher {
   private config: MozhnoConfig;
