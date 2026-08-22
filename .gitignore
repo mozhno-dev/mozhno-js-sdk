@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.log
+*.tgz
 test/e2e-live/env.json
 test-results/
 playwright-report/

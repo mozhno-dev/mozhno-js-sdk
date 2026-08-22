@@ -24,7 +24,7 @@
     "dist/"
   ],
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node scripts/postbuild-types.mjs",
     "prepack": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",

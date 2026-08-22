@@ -1,4 +1,4 @@
-import type { MozhnoConfig, FeatureFlag, ToggleResult, MozhnoContext } from './types';
+import type { MozhnoConfig, FeatureFlag, ToggleResult, MozhnoContext } from '../types';
 
 const SDK_TYPE = 'js';
 declare const __SDK_VERSION__: string;
