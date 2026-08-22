@@ -21,6 +21,9 @@ export interface MozhnoConfig {
 export interface MozhnoContext {
   userId?: string;
   sessionId?: string;
+  /** Auto-generated stable anonymous ID used for sticky bucketing
+   *  when userId/sessionId are missing. Set automatically by the SDK. */
+  anonymousId?: string;
   appName?: string;
   environment?: string;
   [key: string]: string | undefined;
