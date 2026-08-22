@@ -1,4 +1,4 @@
-import type { MozhnoConfig, MozhnoContext, FeatureFlag, ToggleResult, StorageProvider } from './types';
+import type { MozhnoConfig, MozhnoContext, FeatureFlag, StorageProvider } from './types';
 import { EventEmitter } from './events';
 import { HttpFetcher } from './transport/fetcher';
 import { isFlagEnabled } from './evaluation/evaluator';
@@ -144,26 +144,6 @@ export class MozhnoClient extends EventEmitter {
       ...(needsEnvironment && { environment: this.config.environment || 'default' }),
       ...(needsCurrentTime && { currentTime: new Date().toISOString() }),
     };
-  }
-
-  getVariant(flagKey: string): ToggleResult['variant'] | null {
-    if (this.config.mode === 'client') {
-      return null;
-    }
-
-    const flag = this.flags.get(flagKey);
-    if (!flag || !flag.enabled) return null;
-
-    const strategy = flag.activation;
-    if (!strategy) return { name: flag.key, enabled: true };
-
-    for (const variant of (flag as any).variants || []) {
-      if (variant.enabled) {
-        return variant;
-      }
-    }
-
-    return { name: flag.key, enabled: true };
   }
 
   updateContext(context: MozhnoContext): void {

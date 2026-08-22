@@ -10,8 +10,6 @@ export type {
   Activation,
   Constraint,
   ToggleResult,
-  VariantData,
-  PayloadData,
   StorageProvider,
   MozhnoEvent,
 } from './types';

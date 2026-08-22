@@ -161,33 +161,6 @@ test('two clients in one tab share the same anonymousId', async ({ page }) => {
   expect(result.r2).toBe(result.r1);
 });
 
-test('getVariant returns the first enabled variant (server mode)', async ({ page }) => {
-  const flagsWithVariants = [
-    {
-      name: 'theme',
-      key: 'theme',
-      enabled: true,
-      activation: { rollOut: 100 },
-      variants: [
-        { name: 'blue', enabled: true, payload: { type: 'string', value: '#00f' } },
-        { name: 'green', enabled: false, payload: { type: 'string', value: '#0f0' } },
-      ],
-    },
-  ];
-  await page.route('**/api/client/features', async (route) => {
-    await route.fulfill({ json: flagsWithVariants });
-  });
-  await page.goto(FIXTURE + '?mode=server');
-  await page.waitForFunction(() => window.__mozhno.ready);
-
-  const variant = await page.evaluate(() => window.__mozhno.client.getVariant('theme'));
-  expect(variant).toEqual({
-    name: 'blue',
-    enabled: true,
-    payload: { type: 'string', value: '#00f' },
-  });
-});
-
 test('unreachable server: error event fires and ready does not', async ({ page }) => {
   // simulate a dead server: every request aborts -> all retries fail -> 'error' only
   await page.route('**/api/client/features', (route) => route.abort('connectionfailed'));

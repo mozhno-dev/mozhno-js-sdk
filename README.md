@@ -43,7 +43,6 @@ client.stop();                                 // clear timers
 
 client.isEnabled('flag-key');                  // false if not found
 client.isEnabled('flag-key', { userId: '42' }); // with context
-client.getVariant('flag-key');                 // server-mode only
 
 client.updateContext({ userId: '99' });
 client.setContextField('country', 'US');

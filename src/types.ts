@@ -57,18 +57,6 @@ export interface Constraint {
 export interface ToggleResult {
   name: string;
   enabled: boolean;
-  variant: VariantData;
-}
-
-export interface VariantData {
-  name: string;
-  enabled: boolean;
-  payload?: PayloadData;
-}
-
-export interface PayloadData {
-  type: string;
-  value: string;
 }
 
 export interface StorageProvider {
