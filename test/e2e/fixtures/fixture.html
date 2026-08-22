@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mozhno E2E fixture</title>
+</head>
+<body>
+  <pre id="out">pending</pre>
+  <script type="module">
+    import { MozhnoClient } from '/dist/mozhno-client.mjs';
+
+    window.__mozhno = { client: null, log: [] };
+
+    const params = new URLSearchParams(location.search);
+    const out = document.getElementById('out');
+    const log = (s) => {
+      window.__mozhno.log.push(s);
+      out.textContent = window.__mozhno.log.join('\n');
+    };
+
+    window.__mozhno.ready = new Promise((resolve) => {
+      const client = new MozhnoClient({
+        url: 'http://localhost:4173',
+        clientKey: 'test-key',
+        appName: 'e2e',
+        mode: params.get('mode') || 'client',
+        stickyAnonId: params.get('sticky') !== 'false',
+        refreshInterval: params.get('refresh') ? Number(params.get('refresh')) : 60,
+      });
+      window.__mozhno.client = client;
+      client.on('ready', () => { log('[ready]'); resolve(); });
+      client.on('warn', (w) => log('[warn] ' + w));
+      client.on('error', (e) => log('[error] ' + e.message));
+      client.start();
+    });
+  </script>
+</body>
+</html>
